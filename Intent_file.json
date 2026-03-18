@@ -1,183 +1,51 @@
 {
-  "network_name": "Multi-AS-Network",
+  "network_name": "NAS-Project-Core",
   "project_settings": {
     "output_folder": "output"
   },
   "autonomous_systems": [
     {
-      "name": "AS_X",
-      "asn": 65001,
+      "name": "AS_CORE",
+      "asn": 100,
       "igp": {
-        "protocol": "RIP",
-        "version": 2
+        "protocol": "OSPF",
+        "process_id": 1,
+        "area": 0
       },
       "routers": [
-        { "name": "R1", "loopback": "1.1.1.1/32" },
-        { "name": "R2", "loopback": "2.2.2.2/32" },
-        { "name": "R3", "loopback": "3.3.3.3/32" },
-        { "name": "R4", "loopback": "4.4.4.4/32" }
+        { "name": "PE1", "loopback": "1.1.1.1/32" },
+        { "name": "P1",  "loopback": "2.2.2.2/32" },
+        { "name": "P2",  "loopback": "3.3.3.3/32" },
+        { "name": "PE2", "loopback": "4.4.4.4/32" }
       ],
-      "ibgp": {
-        "type": "full-mesh",
-        "update_source": "loopback",
-        "send_community": true
-      },
       "advertise_loopback": true
-    },
-    {
-      "name": "AS_Y",
-      "asn": 65002,
-      "igp": {
-        "protocol": "OSPF",
-        "process_id": 1,
-        "area": 0
-      },
-      "routers": [
-        { "name": "R5", "loopback": "5.5.5.5/32" },
-        { "name": "R6", "loopback": "6.6.6.6/32" },
-        { "name": "R7", "loopback": "7.7.7.7/32" },
-        { "name": "R8", "loopback": "8.8.8.8/32" }
-      ],
-      "ibgp": {
-        "type": "full-mesh",
-        "update_source": "loopback",
-        "send_community": true
-      },
-      "advertise_loopback": true
-    },
-    {
-      "name": "AS_TERM_CUSTOMER",
-      "asn": 65003,
-      "igp": {
-        "protocol": "OSPF",
-        "process_id": 1,
-        "area": 0
-      },
-      "advertise_loopback": true,
-      "routers": [
-        { "name": "C1", "loopback": "10.10.10.1/32" }
-      ]
-    },
-    {
-      "name": "AS_TERM_PEER",
-      "asn": 65004,
-      "igp": {
-        "protocol": "OSPF",
-        "process_id": 1,
-        "area": 0
-      },
-      "advertise_loopback": true,
-      "routers": [
-        { "name": "P1", "loopback": "20.20.20.1/32" }
-      ]
     }
   ],
   "links": [
     {
+      "mpls": true,
       "endpoints": [
-        { "device": "R1", "interface": "FastEthernet0/0", "ip": "10.0.0.1/30" },
-        { "device": "R2", "interface": "FastEthernet0/0", "ip": "10.0.0.2/30" }
-      ]
-    },
-    {
-      "endpoints": [
-        { "device": "R2", "interface": "GigabitEthernet1/0", "ip": "10.0.0.5/30" },
-        { "device": "R3", "interface": "GigabitEthernet1/0", "ip": "10.0.0.6/30" }
-      ]
-    },
-    {
-      "endpoints": [
-        { "device": "R2", "interface": "GigabitEthernet2/0", "ip": "10.0.0.13/30" },
-        { "device": "R4", "interface": "GigabitEthernet2/0", "ip": "10.0.0.14/30" }
-      ]
-    },
-    {
-      "endpoints": [
-        { "device": "R3", "interface": "GigabitEthernet2/0", "ip": "10.0.0.9/30" },
-        { "device": "R5", "interface": "GigabitEthernet2/0", "ip": "10.0.0.10/30" }
-      ]
-    },
-    {
-      "endpoints": [
-        { "device": "R4", "interface": "GigabitEthernet1/0", "ip": "10.0.0.25/30" },
-        { "device": "R6", "interface": "GigabitEthernet1/0", "ip": "10.0.0.26/30" }
-      ]
-    },
-    {
-      "endpoints": [
-        { "device": "R5", "interface": "GigabitEthernet1/0", "ip": "10.0.0.17/30" },
-        { "device": "R7", "interface": "GigabitEthernet1/0", "ip": "10.0.0.18/30" }
+        { "device": "PE1", "interface": "GigabitEthernet1/0", "ip": "10.0.12.1/30" },
+        { "device": "P1",  "interface": "GigabitEthernet1/0", "ip": "10.0.12.2/30" }
       ],
-      "ospf_metric": 50
+      "ospf_metric": 10
     },
     {
+      "mpls": true,
       "endpoints": [
-        { "device": "R7", "interface": "GigabitEthernet2/0", "ip": "10.0.0.21/30" },
-        { "device": "R6", "interface": "GigabitEthernet2/0", "ip": "10.0.0.22/30" }
-      ]
+        { "device": "P1",  "interface": "GigabitEthernet2/0", "ip": "10.0.23.1/30" },
+        { "device": "P2",  "interface": "GigabitEthernet1/0", "ip": "10.0.23.2/30" }
+      ],
+      "ospf_metric": 10
     },
     {
+      "mpls": true,
       "endpoints": [
-        { "device": "R7", "interface": "FastEthernet0/0", "ip": "10.0.0.29/30" },
-        { "device": "R8", "interface": "FastEthernet0/0", "ip": "10.0.0.30/30" }
-      ]
-    },
-    {
-      "endpoints": [
-        { "device": "R1", "interface": "GigabitEthernet1/0", "ip": "192.168.100.1/30" },
-        { "device": "C1", "interface": "GigabitEthernet1/0", "ip": "192.168.100.2/30" }
-      ]
-    },
-    {
-      "endpoints": [
-        { "device": "R2", "interface": "GigabitEthernet3/0", "ip": "192.168.200.1/30" },
-        { "device": "P1", "interface": "GigabitEthernet3/0", "ip": "192.168.200.2/30" }
-      ]
+        { "device": "P2",  "interface": "GigabitEthernet2/0", "ip": "10.0.34.1/30" },
+        { "device": "PE2", "interface": "GigabitEthernet1/0", "ip": "10.0.34.2/30" }
+      ],
+      "ospf_metric": 10
     }
   ],
-  "bgp": {
-    "communities": {
-      "customer": "65001:100",
-      "peer": "65001:200",
-      "provider": "65001:300",
-      "local": "65001:999"
-    },
-    "local_preference": {
-      "customer": 200,
-      "peer": 150,
-      "provider": 50,
-      "local": 200
-    },
-    "propagation_policy": {
-      "to_customer": ["local", "customer", "peer", "provider"],
-      "to_peer": ["local", "customer"],
-      "to_provider": ["local"]
-    },
-    "ebgp_peers": [
-      {
-        "local_router": "R3",
-        "remote_router": "R5",
-        "remote_as": 65002,
-        "relationship": "provider"
-      },
-      {
-        "local_router": "R4",
-        "remote_router": "R6",
-        "remote_as": 65002,
-        "relationship": "provider"
-      },
-      {
-        "local_router": "R1",
-        "remote_router": "C1",
-        "remote_as": 65003,
-        "relationship": "customer"
-      },
-      {
-        "local_router": "R2",
-        "remote_router": "P1",
-        "remote_as": 65004,
-        "relationship": "peer"
-      }
-    ]
-  }
- }
+  "bgp": {}
+}

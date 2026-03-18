@@ -100,14 +100,20 @@ def validate_intent_minimal(intent: dict):
 # BLOCS DE CONFIGURATION DE BASE
 # =========================================================
 
-def creer_entete(hostname):
-    return f"""!
+def creer_entete(hostname, mpls_enabled=False):
+    cfg = f"""!
 version 15.2
 service timestamps debug datetime msec
 service timestamps log datetime msec
 hostname {hostname}
 !
-"""
+ip cef
+""" 
+    if mpls_enabled:
+        cfg+= "mpls label protocol ldp\n"
+        cfg+= "mpls ldp router-id Loopback0 force\n"
+    cfg += "!\n"
+    return cfg
 
 def configurer_interfaces(interfaces, protocol_igp: str):
     cfg = ""
@@ -120,6 +126,8 @@ def configurer_interfaces(interfaces, protocol_igp: str):
         metric = iface.get("ospf_metric")
         if protocol_igp.upper() == "OSPF" and metric is not None:
             cfg += f" ip ospf cost {int(metric)}\n"
+        if iface.get("mpls"):
+            cfg +=" mpls ip\n" # On active MPLS
 
         cfg += """ no shutdown
 !
@@ -342,6 +350,7 @@ def get_router_interfaces(router_name, intent):
     for link in intent.get("links", []):
         # lecture de la métrique portée par le lien (choisis UNE clé et garde-la)
         metric = link.get("ospf_metric")  # <- on va utiliser cette clé dans TON json
+        mpls_enabled = link.get("mpls",False) # Pour récup le flag mpls du JSON
 
         for ep in link.get("endpoints", []):
             if ep.get("device") == router_name:
@@ -353,6 +362,8 @@ def get_router_interfaces(router_name, intent):
                 }
                 if metric is not None:
                     iface_data["ospf_metric"] = metric
+                if mpls_enabled:
+                    iface_data["mpls"] = True
                 interfaces.append(iface_data)
     return interfaces
 
@@ -408,6 +419,11 @@ def assembler_configuration(router_name, intent):
 
     interfaces = get_router_interfaces(router_name, intent)
 
+    
+    # Vérifie si au moins une interface de ce routeur a le flag mpls à True
+    router_needs_mpls = any(iface.get("mpls") for iface in interfaces)
+
+
     # iBGP neighbors
     ibgp_neighbors = []
     if as_data.get("ibgp", {}).get("type") == "full-mesh":
@@ -419,7 +435,7 @@ def assembler_configuration(router_name, intent):
     ebgp_neighbors = collect_ebgp_neighbors(router_name, intent)
 
     cfg = ""
-    cfg += creer_entete(router_name)
+    cfg += creer_entete(router_name, mpls_enabled=router_needs_mpls) #Nouveau param à l'entête
     cfg += configurer_loopback(loopback_ip)
     protocol_igp = as_data["igp"]["protocol"].upper()
     cfg += configurer_interfaces(interfaces, protocol_igp)
