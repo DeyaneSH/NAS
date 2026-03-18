@@ -1,0 +1,82 @@
+!
+!
+!
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+hostname R6
+!
+interface Loopback0
+ ip address 6.6.6.6 255.255.255.255
+!
+interface GigabitEthernet1/0
+ ip address 10.0.0.26 255.255.255.252
+ no shutdown
+!
+interface GigabitEthernet2/0
+ ip address 10.0.0.22 255.255.255.252
+ no shutdown
+!
+router ospf 1
+ router-id 6.6.6.6
+ network 10.0.0.24 0.0.0.3 area 0
+ network 10.0.0.20 0.0.0.3 area 0
+ network 6.6.6.6 0.0.0.0 area 0
+!
+ip community-list standard CUSTOMER permit 65001:100
+ip community-list standard PEER permit 65001:200
+ip community-list standard PROVIDER permit 65001:300
+
+route-map RM-IN-CUSTOMER permit 10
+ set community 65001:100 additive
+ set local-preference 200
+!
+route-map RM-IN-PEER permit 10
+ set community 65001:200 additive
+ set local-preference 150
+!
+route-map RM-IN-PROVIDER permit 10
+ set community 65001:300 additive
+ set local-preference 50
+!
+ip community-list standard TO_CUSTOMER permit 65001:100
+ip community-list standard TO_CUSTOMER permit 65001:200
+ip community-list standard TO_CUSTOMER permit 65001:300
+
+route-map RM-OUT-TO-CUSTOMER permit 10
+ match community TO_CUSTOMER
+route-map RM-OUT-TO-CUSTOMER deny 20
+!
+ip community-list standard TO_PEER permit 65001:100
+
+route-map RM-OUT-TO-PEER permit 10
+ match community TO_PEER
+route-map RM-OUT-TO-PEER deny 20
+!
+ip community-list standard TO_PROVIDER permit 65001:100
+
+route-map RM-OUT-TO-PROVIDER permit 10
+ match community TO_PROVIDER
+route-map RM-OUT-TO-PROVIDER deny 20
+!
+router bgp 65002
+ bgp router-id 6.6.6.6
+ bgp log-neighbor-changes
+ neighbor 5.5.5.5 remote-as 65002
+ neighbor 5.5.5.5 update-source Loopback0
+ neighbor 5.5.5.5 next-hop-self
+ neighbor 5.5.5.5 send-community
+ neighbor 7.7.7.7 remote-as 65002
+ neighbor 7.7.7.7 update-source Loopback0
+ neighbor 7.7.7.7 next-hop-self
+ neighbor 7.7.7.7 send-community
+ neighbor 8.8.8.8 remote-as 65002
+ neighbor 8.8.8.8 update-source Loopback0
+ neighbor 8.8.8.8 next-hop-self
+ neighbor 8.8.8.8 send-community
+ neighbor 10.0.0.25 remote-as 65001
+ neighbor 10.0.0.25 send-community
+ neighbor 10.0.0.25 route-map RM-IN-CUSTOMER in
+ neighbor 10.0.0.25 route-map RM-OUT-TO-CUSTOMER out
+!

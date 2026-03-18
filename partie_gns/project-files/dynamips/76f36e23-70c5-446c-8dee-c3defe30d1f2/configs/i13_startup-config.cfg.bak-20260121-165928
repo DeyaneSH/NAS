@@ -1,0 +1,79 @@
+!
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+hostname C1
+!
+interface Loopback0
+ ip address 10.10.10.1 255.255.255.255
+!
+interface GigabitEthernet1/0
+ ip address 192.168.100.2 255.255.255.252
+ no shutdown
+!
+router ospf 1
+ router-id 10.10.10.1
+ network 192.168.100.0 0.0.0.3 area 0
+ network 10.10.10.1 0.0.0.0 area 0
+!
+! Filtres de sécurité - Bloquer routes privées/bogon
+ip prefix-list BOGONS deny 0.0.0.0/8 le 32
+ip prefix-list BOGONS deny 10.0.0.0/8 le 32
+ip prefix-list BOGONS deny 172.16.0.0/12 le 32
+ip prefix-list BOGONS deny 192.168.0.0/16 le 32
+ip prefix-list BOGONS deny 224.0.0.0/4 le 32
+ip prefix-list BOGONS permit 0.0.0.0/0 le 32
+!
+ip community-list standard CUSTOMER permit 65001:100
+ip community-list standard PEER permit 65001:200
+ip community-list standard PROVIDER permit 65001:300
+!
+route-map RM-IN-CUSTOMER permit 10
+ match ip address prefix-list BOGONS
+ set community 65001:100 additive
+ set local-preference 200
+!
+route-map RM-IN-PEER permit 10
+ match ip address prefix-list BOGONS
+ set community 65001:200 additive
+ set local-preference 150
+!
+route-map RM-IN-PROVIDER permit 10
+ match ip address prefix-list BOGONS
+ set community 65001:300 additive
+ set local-preference 50
+!
+route-map RM-SET-LOCAL permit 10
+ set local-preference 200
+ set community 65001:100 additive
+!
+ip community-list standard TO_CUSTOMER permit 65001:100
+ip community-list standard TO_CUSTOMER permit 65001:200
+ip community-list standard TO_CUSTOMER permit 65001:300
+
+route-map RM-OUT-TO-CUSTOMER permit 10
+ match community TO_CUSTOMER
+!
+ip community-list standard TO_PEER permit 65001:100
+
+route-map RM-OUT-TO-PEER permit 10
+ match community TO_PEER
+!
+ip community-list standard TO_PROVIDER permit 65001:100
+
+route-map RM-OUT-TO-PROVIDER permit 10
+ match community TO_PROVIDER
+!
+router bgp 65003
+ bgp router-id 10.10.10.1
+ bgp log-neighbor-changes
+ neighbor 192.168.100.1 remote-as 65001
+ neighbor 192.168.100.1 send-community
+ neighbor 192.168.100.1 route-map RM-IN-PROVIDER in
+ neighbor 192.168.100.1 route-map RM-OUT-TO-PROVIDER out
+ neighbor 192.168.100.1 soft-reconfiguration inbound
+ network 10.10.10.1 mask 255.255.255.255 route-map RM-SET-LOCAL
+!
+!
+end

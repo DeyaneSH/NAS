@@ -1,0 +1,91 @@
+!
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+hostname R5
+!
+interface Loopback0
+ ip address 5.5.5.5 255.255.255.255
+!
+interface GigabitEthernet2/0
+ ip address 10.0.0.10 255.255.255.252
+ no shutdown
+!
+interface GigabitEthernet1/0
+ ip address 10.0.0.17 255.255.255.252
+ no shutdown
+!
+router ospf 1
+ router-id 5.5.5.5
+ network 10.0.0.8 0.0.0.3 area 0
+ ip ospf cost 10
+ network 10.0.0.16 0.0.0.3 area 0
+ ip ospf cost 10
+ network 5.5.5.5 0.0.0.0 area 0
+!
+ip community-list standard CUSTOMER permit 65001:100
+ip community-list standard PEER permit 65001:200
+ip community-list standard PROVIDER permit 65001:300
+
+route-map RM-IN-CUSTOMER permit 10 
+ set community 65001:100 additive
+ set local-preference 200
+!
+route-map RM-IN-PEER permit 10 
+ set community 65001:200 additive
+ set local-preference 150
+!
+route-map RM-IN-PROVIDER permit 10 
+ set community 65001:300 additive
+ set local-preference 50
+!
+route-map RM-SET-LOCAL permit 10
+ set local-preference 200
+ set community 65001:100 additive
+!
+ip community-list standard TO_CUSTOMER permit 65001:100
+ip community-list standard TO_CUSTOMER permit 65001:200
+ip community-list standard TO_CUSTOMER permit 65001:300
+
+route-map RM-OUT-TO-CUSTOMER permit 10 
+ match community TO_CUSTOMER
+route-map RM-OUT-TO-CUSTOMER deny 20
+!
+ip community-list standard TO_PEER permit 65001:100
+
+route-map RM-OUT-TO-PEER permit 10 
+ match community TO_PEER
+route-map RM-OUT-TO-PEER deny 20
+!
+ip community-list standard TO_PROVIDER permit 65001:100
+
+route-map RM-OUT-TO-PROVIDER permit 10 
+ match community TO_PROVIDER
+route-map RM-OUT-TO-PROVIDER deny 20
+!
+router bgp 65002
+ bgp router-id 5.5.5.5
+ bgp log-neighbor-changes
+ neighbor 6.6.6.6 remote-as 65002
+ neighbor 6.6.6.6 update-source Loopback0
+ neighbor 6.6.6.6 next-hop-self
+ neighbor 6.6.6.6 send-community
+ neighbor 6.6.6.6 soft-reconfiguration inbound
+ neighbor 7.7.7.7 remote-as 65002
+ neighbor 7.7.7.7 update-source Loopback0
+ neighbor 7.7.7.7 next-hop-self
+ neighbor 7.7.7.7 send-community
+ neighbor 7.7.7.7 soft-reconfiguration inbound
+ neighbor 8.8.8.8 remote-as 65002
+ neighbor 8.8.8.8 update-source Loopback0
+ neighbor 8.8.8.8 next-hop-self
+ neighbor 8.8.8.8 send-community
+ neighbor 8.8.8.8 soft-reconfiguration inbound
+ neighbor 10.0.0.9 remote-as 65001
+ neighbor 10.0.0.9 send-community
+ neighbor 10.0.0.9 route-map RM-IN-CUSTOMER in
+ neighbor 10.0.0.9 route-map RM-OUT-TO-CUSTOMER out
+ neighbor 10.0.0.9 soft-reconfiguration inbound
+ network 5.5.5.5 mask 255.255.255.255 route-map RM-SET-LOCAL
+!
