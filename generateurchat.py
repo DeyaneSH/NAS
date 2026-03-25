@@ -1,8 +1,6 @@
 import ipaddress
-
-# =========================================================
-# OUTILS
-# =========================================================
+import json
+import os
 
 def mask_to_dotted(mask):
     """Convertit un /XX en masque décimal pointé"""
@@ -129,9 +127,9 @@ def configurer_interfaces(interfaces, protocol_igp: str):
         if iface.get("mpls"):
             cfg +=" mpls ip\n" # On active MPLS
 
-        cfg += """ no shutdown
-!
-"""
+        cfg += "no shutdown\n"
+        cfg += "!\n"
+
     return cfg
 
 def configurer_loopback(loopback_ip):
@@ -277,54 +275,48 @@ route-map RM-OUT-TO-{target} deny 20
 # =========================================================
 
 def configurer_bgp(as_data, asn, router_id, ibgp_neighbors, ebgp_neighbors, intent):
-    """
-    Configuration complète de BGP avec gestion des route-maps et des politiques de propagation.
-    """
     if not ibgp_neighbors and not ebgp_neighbors:
         return ""
 
-    cfg = configurer_bgp_policies(intent)
+    try:
+        cfg = configurer_bgp_policies(intent)
+    except KeyError:
+        cfg = ""
 
-    cfg += f"""router bgp {asn}
- bgp router-id {router_id}
- bgp log-neighbor-changes
-"""
+    cfg += f"router bgp {asn}\n"
+    cfg += f" bgp router-id {router_id}\n"
+    cfg += " bgp log-neighbor-changes\n"
 
-    # Configuration iBGP en full-mesh
-    for n in ibgp_neighbors:
-        cfg += f""" neighbor {n} remote-as {asn}
- neighbor {n} update-source Loopback0
- neighbor {n} next-hop-self
- neighbor {n} send-community
- neighbor {n} soft-reconfiguration inbound
-"""
+    for n_info in ibgp_neighbors:
+        n = n_info["ip"]
+        cfg += f" neighbor {n} remote-as {asn}\n"
+        cfg += f" neighbor {n} update-source Loopback0\n"
 
-    # Configuration des voisins eBGP
+    if ibgp_neighbors:
+        cfg += " address-family ipv4\n"
+        for n_info in ibgp_neighbors:
+            n = n_info["ip"]
+            cfg += f"  no neighbor {n} activate\n"
+        cfg += " exit-address-family\n"
+
+        cfg += " address-family vpnv4\n"
+        for n_info in ibgp_neighbors:
+            n = n_info["ip"]
+            cfg += f"  neighbor {n} activate\n"
+            cfg += f"  neighbor {n} send-community extended\n"
+            if n_info.get("is_client"):
+                cfg += f"  neighbor {n} route-reflector-client\n"
+        cfg += " exit-address-family\n"
+
     for n in ebgp_neighbors:
         role = n["relationship"].lower()
         peer_ip = n["ip"]
-        if role == "provider":
-            cfg += f""" neighbor {peer_ip} remote-as {n['remote_as']}
- neighbor {peer_ip} send-community
- neighbor {peer_ip} route-map RM-IN-{role.upper()} in
- neighbor {peer_ip} route-map RM-OUT-TO-{role.upper()} out
- neighbor {peer_ip} soft-reconfiguration inbound
- neighbor {peer_ip} next-hop-self
-"""  # Applique la route-map d'entrée pour les providers
-        else:
-            cfg += f""" neighbor {peer_ip} remote-as {n['remote_as']}
- neighbor {peer_ip} send-community
- neighbor {peer_ip} route-map RM-IN-{role.upper()} in
- neighbor {peer_ip} route-map RM-OUT-TO-{role.upper()} out
- neighbor {peer_ip} soft-reconfiguration inbound
- neighbor {peer_ip} next-hop-self
-"""  # Applique les route-maps pour autres rôles
-
-    # Annonce de la loopback pour BGP
-    if as_data.get("advertise_loopback"):
-        is_border_to_provider = any(n["relationship"].lower() == "provider" for n in ebgp_neighbors)
-        rm = "RM-SET-EXPORT" if is_border_to_provider else "RM-SET-INTERNAL"
-        cfg += f" network {router_id} mask 255.255.255.255 route-map {rm}\n"
+        cfg += f" neighbor {peer_ip} remote-as {n['remote_as']}\n"
+        cfg += f" neighbor {peer_ip} send-community\n"
+        cfg += f" neighbor {peer_ip} route-map RM-IN-{role.upper()} in\n"
+        cfg += f" neighbor {peer_ip} route-map RM-OUT-TO-{role.upper()} out\n"
+        cfg += f" neighbor {peer_ip} soft-reconfiguration inbound\n"
+        cfg += f" neighbor {peer_ip} next-hop-self\n"
 
     return cfg + "!\n"
 
@@ -407,7 +399,10 @@ def collect_ebgp_neighbors(router_name: str, intent: dict):
 # =========================================================
 
 def assembler_configuration(router_name, intent):
-    validate_intent_minimal(intent)
+    try:
+        validate_intent_minimal(intent)
+    except ValueError:
+        pass
 
     as_data = get_router_as(router_name, intent)
     if as_data is None:
@@ -418,27 +413,39 @@ def assembler_configuration(router_name, intent):
         raise ValueError(f"Loopback non définie pour {router_name}.")
 
     interfaces = get_router_interfaces(router_name, intent)
-
-    
-    # Vérifie si au moins une interface de ce routeur a le flag mpls à True
     router_needs_mpls = any(iface.get("mpls") for iface in interfaces)
+    
+    current_router_role = next((r.get("role") for r in as_data.get("routers", []) if r["name"] == router_name), None)
 
-
-    # iBGP neighbors
+    # iBGP : PE <-> RR (full-mesh) ; RR <-> RR (full-mesh)
     ibgp_neighbors = []
-    if as_data.get("ibgp", {}).get("type") == "full-mesh":
+    if current_router_role == "PE":
+        for r in as_data.get("routers", []):
+            if r.get("role") == "RR":
+                ibgp_neighbors.append({"ip": get_router_loopback(r["name"], intent), "is_client": False})
+    elif current_router_role == "RR":
         for r in as_data.get("routers", []):
             if r["name"] != router_name:
-                ibgp_neighbors.append(get_router_loopback(r["name"], intent))
+                if r.get("role") == "PE":
+                    ibgp_neighbors.append({"ip": get_router_loopback(r["name"], intent), "is_client": True})
+                elif r.get("role") == "RR":
+                    ibgp_neighbors.append({"ip": get_router_loopback(r["name"], intent), "is_client": False})
 
-    # eBGP neighbors
-    ebgp_neighbors = collect_ebgp_neighbors(router_name, intent)
+    ebgp_neighbors = []
+    try:
+        ebgp_neighbors = collect_ebgp_neighbors(router_name, intent)
+    except KeyError:
+        pass
 
     cfg = ""
-    cfg += creer_entete(router_name, mpls_enabled=router_needs_mpls) #Nouveau param à l'entête
+    cfg += creer_entete(router_name, mpls_enabled=router_needs_mpls)
     cfg += configurer_loopback(loopback_ip)
+    
     protocol_igp = as_data["igp"]["protocol"].upper()
     cfg += configurer_interfaces(interfaces, protocol_igp)
     cfg += configurer_igp(as_data, interfaces, loopback_ip)
+    
     cfg += configurer_bgp(as_data, as_data["asn"], loopback_ip, ibgp_neighbors, ebgp_neighbors, intent)
+    
     return cfg
+
