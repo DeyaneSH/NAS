@@ -162,10 +162,10 @@ def deploy_vrf_via_telnet(host, port, vrf_list):
         print(f"[-] Erreur de connexion à {host}:{port} : {e}")
 
 def main():
-    ap.add_argument("--telnet-vrf", action="store_true", help="Déploie uniquement les VRFs à chaud via Telnet")
     ap = argparse.ArgumentParser(
         description="Déploie les configs générées (output/*.cfg) dans le bon dossier du projet GNS3."
     )
+    ap.add_argument("--telnet-vrf", action="store_true", help="Déploie uniquement les VRFs à chaud via Telnet")
     ap.add_argument("--project", required=True, help="Chemin du dossier projet GNS3 (celui qui contient le .gns3)")
     ap.add_argument("--generated", default="output", help="Dossier contenant R1.cfg, R2.cfg, ... (par défaut: output)")
     ap.add_argument("--ext", default=".cfg", help="Extension des configs générées (par défaut: .cfg)")
@@ -257,7 +257,7 @@ def main():
     # --- EXECUTION À CHAUD (PHASE 3 & 4) ---
         print("[-] Mode Telnet activé : Déploiement des VRFs à chaud...")
         with open("intent_file.json", "r") as f:
-        network_data = json.load(f)
+            network_data = json.load(f)
     
         vrfs_to_deploy = network_data.get("vrfs", [])
     if not vrfs_to_deploy:
