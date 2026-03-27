@@ -102,58 +102,70 @@ def deploy_one(router_name: str, src_cfg: str, dst_cfg: str, do_backup: bool, dr
 
     shutil.copy2(src_cfg, dst_cfg)
     print(f"✅ Deployed: {router_name} -> {dst_cfg}")
-def send_command(tn, command, sleep_time=0.1):
+
+def send_command(tn, command, sleep_time=0.5):
     """
-    Fonction utilitaire pour envoyer une commande Telnet.
-    Il faut encoder la chaîne de caractères en octets (ASCII) et ajouter "Entrée" (\n).
+    Envoie une commande avec le vrai 'Entrée' Cisco (\r\n) 
+    et affiche TOUT ce que le routeur répond pour débugger.
     """
-    tn.write(command.encode('ascii') + b"\n")
-    time.sleep(sleep_time) 
-def deploy_vrf_via_telnet(host, port, vrf_list):
-    """
-    Se connecte au port console du routeur via Telnet et déploie les VRF.
-    """
-    print(f"[*] Connexion Telnet à {host}:{port}...")
+    # 1. CORRECTION MAJEURE : On utilise \r\n au lieu de \n
+    tn.write(command.encode('ascii') + b"\r\n")
+    time.sleep(sleep_time)
     
-    try:
+    # 2. On lit la réponse
+    output = tn.read_very_eager().decode('ascii', errors='ignore')
+    
+    # 3. DEBUG : On affiche la réponse brute du routeur dans la console Python !
+    # On nettoie un peu l'affichage pour que ce soit lisible
+    reponse_propre = output.replace('\r\n', ' | ').strip()
+    if reponse_propre:
+        print(f"      [Routeur] {reponse_propre}")
+    else:
+        print("      [Routeur] (Silence absolu...)")
         
+    if "% Invalid" in output or "% Incomplete" in output or "% Unknown" in output:
+        print(f"      ❌ ERREUR : {output.strip()}")
+        
+    return output
+
+def deploy_vrf_via_telnet(host, port, vrf_list):
+    print(f"[*] Connexion Telnet à {host}:{port}...")
+    try:
         tn = telnetlib.Telnet(host, port, timeout=5)
         
-        
-        tn.write(b"\n\n")
-        time.sleep(0.5)
+        # On appuie deux fois sur Entrée pour rafraîchir le prompt
+        tn.write(b"\r\n\r\n")
+        time.sleep(1) # On attend 1 vraie seconde que le routeur se réveille
+        tn.read_very_eager() # On vide les vieux logs systèmes qui traînent
 
         print("[+] Connecté ! Passage en mode configuration...")
-        send_command(tn, "configure terminal")
-
+        # On s'assure d'abord d'être en mode enable (si jamais le routeur était en Router>)
+        send_command(tn, "enable", sleep_time=0.5)
         
+        # On passe en mode config et on attend pour être SÛR d'y être
+        send_command(tn, "configure terminal", sleep_time=1)
+
         for vrf in vrf_list:
             print(f"    -> Injection de la VRF : {vrf['name']}")
             
-           
             send_command(tn, f"ip vrf {vrf['name']}")
             send_command(tn, f"rd {vrf['rd']}")
             
-            
-            for rt_exp in vrf['rt_export']:
+            for rt_exp in vrf.get('rt_export', []): # .get() protège si la clé manque
                 send_command(tn, f"route-target export {rt_exp}")
                 
-            
-            for rt_imp in vrf['rt_import']:
+            for rt_imp in vrf.get('rt_import', []):
                 send_command(tn, f"route-target import {rt_imp}")
             
-           
-            send_command(tn, "exit")
-        
+            send_command(tn, "exit") # On sort de la config de cette VRF
         
         send_command(tn, "end")
-        send_command(tn, "write memory", sleep_time=1)
-        
-        
-        output = tn.read_very_eager().decode('ascii')
-        print("--- Retour Console ---")
-       
-        print("\n".join(output.split("\n")[-10:])) 
+        print("[+] Sauvegarde de la configuration (write memory)...")
+        # On envoie la commande
+        send_command(tn, "write memory", sleep_time=2)
+        # On envoie une touche "Entrée" supplémentaire (b"\r\n") pour valider le [confirm]
+        tn.write(b"\r\n") 
+        time.sleep(1)
         
         tn.close()
         print(f"[✅] Déploiement terminé sur {host}:{port}\n")
@@ -161,125 +173,115 @@ def deploy_vrf_via_telnet(host, port, vrf_list):
     except Exception as e:
         print(f"[-] Erreur de connexion à {host}:{port} : {e}")
 
-
-
 def main():
+    # 1. On crée d'ABORD le parseur
     ap = argparse.ArgumentParser(
         description="Déploie les configs générées (output/*.cfg) dans le bon dossier du projet GNS3."
     )
+    
+    # 2. On ajoute TOUS les arguments
     ap.add_argument("--telnet-vrf", action="store_true", help="Déploie uniquement les VRFs à chaud via Telnet")
     ap.add_argument("--project", required=True, help="Chemin du dossier projet GNS3 (celui qui contient le .gns3)")
     ap.add_argument("--generated", default="output", help="Dossier contenant R1.cfg, R2.cfg, ... (par défaut: output)")
     ap.add_argument("--ext", default=".cfg", help="Extension des configs générées (par défaut: .cfg)")
     ap.add_argument("--backup", action="store_true", help="Fait un backup du startup-config actuel avant d'écraser")
     ap.add_argument("--dry-run", action="store_true", help="N'écrit rien, affiche juste ce qui serait copié")
+    
+    # 3. On parse (lit) les arguments tapés par l'utilisateur
     args = ap.parse_args()
 
-    project_dir = os.path.abspath(args.project)
-    gen_dir = os.path.abspath(args.generated)
-
-    gns3_path = find_gns3_file(project_dir)
-    print(f"📄 Using project file: {gns3_path}")
-
-    nodes = load_project_nodes(gns3_path)
-    if not nodes:
-        raise RuntimeError("Aucun node trouvé dans le fichier .gns3 (topology.nodes vide).")
-
-    missing_generated: List[str] = []
-    missing_node_dir: List[str] = []
-    missing_startup: List[str] = []
-    deployed: List[Tuple[str, str]] = []
-
-    # Infos de connexion aux nodes GNS3 pour Telnet
-    gns3_routers = {}
-
-    for n in nodes:
-        name = n.get("name")
-        node_id = n.get("node_id")
-        if not name or not node_id:
-            continue
-
-        print("Cherche le port telnet")
-        # Cherche le port telnet
-        if "PE" in name:
-            print("PE found: " + name)
-            telnet_port = n.get("console")
-            print("telnet_port = " + str(telnet_port))
-
-            gns3_routers[name] = {"host": "127.0.0.1", "port": telnet_port}
-
-        # On déploie seulement si un fichier <name>.cfg existe
-        src_cfg = os.path.join(gen_dir, f"{name}{args.ext}")
-        if not os.path.exists(src_cfg):
-            missing_generated.append(name)
-            continue
-
-        node_dir = find_node_dir(project_dir, node_id)
-        if node_dir is None:
-            missing_node_dir.append(name)
-            continue
-
-        dst_cfg = find_startup_config(node_dir)
-        if dst_cfg is None:
-            missing_startup.append(name)
-            continue
-
-
-        deploy_one(name, src_cfg, dst_cfg, do_backup=args.backup, dry_run=args.dry_run)
-        deployed.append((name, dst_cfg))
-
-    print("\n=== SUMMARY ===")
-    print(f"Deployed: {len(deployed)}")
-    if missing_generated:
-        print(f"⚠️ No generated cfg for: {', '.join(sorted(set(missing_generated)))}")
-    if missing_node_dir:
-        print(f"⚠️ Node dir not found for: {', '.join(sorted(set(missing_node_dir)))}")
-    if missing_startup:
-        print(f"⚠️ No startup-config found for: {', '.join(sorted(set(missing_startup)))}")
-
-    print("\n✅ Done.")
-    print("ℹ️ Pense à 'Reload' / 'Restart' les nodes dans GNS3 si nécessaire.")
-
-#partie VRF
-    print("[-] Chargement de intent_file.json...")
-    with open("intent_file.json", "r") as f:
-        network_data = json.load(f)
+    # --- AIGUILLAGE PRINCIPAL ---
     
-    
-    vrfs_to_deploy = network_data.get("vrfs", [])
-    
-    if not vrfs_to_deploy:
-        print("Aucune VRF trouvée dans le fichier JSON.")
-        exit()
-    
-    for router_name, connection_info in gns3_routers.items():
-        print(f"=== Cible : {router_name} ===")
-        deploy_vrf_via_telnet(
-            connection_info["host"], 
-            connection_info["port"], 
-            vrfs_to_deploy
-        )
-    # Dans la fonction main() :
-
     if args.telnet_vrf:
-    # --- EXECUTION À CHAUD (PHASE 3 & 4) ---
+        # ==========================================
+        # EXECUTION À CHAUD (PHASE 3 & 4) - TELNET
+        # ==========================================
         print("[-] Mode Telnet activé : Déploiement des VRFs à chaud...")
-        with open("intent_file.json", "r") as f:
-            network_data = json.load(f)
-    
-        vrfs_to_deploy = network_data.get("vrfs", [])
-    if not vrfs_to_deploy:
-        print("Aucune VRF trouvée.")
-        return
+        
+        # On lit le fichier JSON pour trouver les VRF
+        try:
+            with open("intent_file.json", "r") as f:
+                network_data = json.load(f)
+        except FileNotFoundError:
+            print("❌ Erreur : Fichier intent_file.json introuvable.")
+            return
 
-    for router_name, connection_info in gns3_routers.items():
-        deploy_vrf_via_telnet(connection_info["host"], connection_info["port"], vrfs_to_deploy)
+        vrfs_to_deploy = network_data.get("vrfs", []) 
+        if not vrfs_to_deploy:
+            print("⚠️ Aucune VRF (vrfs) trouvée dans le fichier JSON.")
+            return
+
+        # Dictionnaire statique (pourrait être dynamique plus tard)
+        gns3_routers = {
+            "PE1": {"host": "127.0.0.1", "port": 5004},
+            "PE2": {"host": "127.0.0.1", "port": 5000}
+        }
+
+        # On lance le déploiement Telnet
+        for router_name, connection_info in gns3_routers.items():
+            print(f"\n=== Cible : {router_name} ===")
+            deploy_vrf_via_telnet(
+                connection_info["host"], 
+                connection_info["port"], 
+                vrfs_to_deploy
+            )
 
     else:
-    # --- EXECUTION À FROID (PHASE 1 & 2) ---
-    # Mettez ici toute votre logique actuelle de copie de fichiers (find_gns3_file, deploy_one, etc.)
+        # ==========================================
+        # EXECUTION À FROID (PHASE 1 & 2) - FICHIERS
+        # ==========================================
         print("[-] Mode Fichiers activé : Écrasement des startup-configs...")
-    # ...
+        
+        project_dir = os.path.abspath(args.project)
+        gen_dir = os.path.abspath(args.generated)
+
+        gns3_path = find_gns3_file(project_dir)
+        print(f"📄 Using project file: {gns3_path}")
+
+        nodes = load_project_nodes(gns3_path)
+        if not nodes:
+            raise RuntimeError("Aucun node trouvé dans le fichier .gns3 (topology.nodes vide).")
+
+        missing_generated: List[str] = []
+        missing_node_dir: List[str] = []
+        missing_startup: List[str] = []
+        deployed: List[Tuple[str, str]] = []
+
+        for n in nodes:
+            name = n.get("name")
+            node_id = n.get("node_id")
+            if not name or not node_id:
+                continue
+
+            src_cfg = os.path.join(gen_dir, f"{name}{args.ext}")
+            if not os.path.exists(src_cfg):
+                missing_generated.append(name)
+                continue
+
+            node_dir = find_node_dir(project_dir, node_id)
+            if node_dir is None:
+                missing_node_dir.append(name)
+                continue
+
+            dst_cfg = find_startup_config(node_dir)
+            if dst_cfg is None:
+                missing_startup.append(name)
+                continue
+
+            deploy_one(name, src_cfg, dst_cfg, do_backup=args.backup, dry_run=args.dry_run)
+            deployed.append((name, dst_cfg))
+
+        print("\n=== SUMMARY ===")
+        print(f"Deployed: {len(deployed)}")
+        if missing_generated:
+            print(f"⚠️ No generated cfg for: {', '.join(sorted(set(missing_generated)))}")
+        if missing_node_dir:
+            print(f"⚠️ Node dir not found for: {', '.join(sorted(set(missing_node_dir)))}")
+        if missing_startup:
+            print(f"⚠️ No startup-config found for: {', '.join(sorted(set(missing_startup)))}")
+
+        print("\n✅ Done.")
+        print("ℹ️ Pense à 'Reload' / 'Restart' les nodes dans GNS3 si nécessaire.")
 
 if __name__ == "__main__":
     main()
