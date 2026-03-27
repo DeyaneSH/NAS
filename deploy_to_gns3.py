@@ -3,6 +3,8 @@ import argparse
 import json
 import os
 import shutil
+import telnetlib
+import time
 from datetime import datetime
 from typing import Optional, List, Tuple
 
@@ -100,7 +102,64 @@ def deploy_one(router_name: str, src_cfg: str, dst_cfg: str, do_backup: bool, dr
 
     shutil.copy2(src_cfg, dst_cfg)
     print(f"✅ Deployed: {router_name} -> {dst_cfg}")
+def send_command(tn, command, sleep_time=0.1):
+    """
+    Fonction utilitaire pour envoyer une commande Telnet.
+    Il faut encoder la chaîne de caractères en octets (ASCII) et ajouter "Entrée" (\n).
+    """
+    tn.write(command.encode('ascii') + b"\n")
+    time.sleep(sleep_time) 
+def deploy_vrf_via_telnet(host, port, vrf_list):
+    """
+    Se connecte au port console du routeur via Telnet et déploie les VRF.
+    """
+    print(f"[*] Connexion Telnet à {host}:{port}...")
+    
+    try:
+        
+        tn = telnetlib.Telnet(host, port, timeout=5)
+        
+        
+        tn.write(b"\n\n")
+        time.sleep(0.5)
 
+        print("[+] Connecté ! Passage en mode configuration...")
+        send_command(tn, "configure terminal")
+
+        
+        for vrf in vrf_list:
+            print(f"    -> Injection de la VRF : {vrf['name']}")
+            
+           
+            send_command(tn, f"ip vrf {vrf['name']}")
+            send_command(tn, f"rd {vrf['rd']}")
+            
+            
+            for rt_exp in vrf['rt_export']:
+                send_command(tn, f"route-target export {rt_exp}")
+                
+            
+            for rt_imp in vrf['rt_import']:
+                send_command(tn, f"route-target import {rt_imp}")
+            
+           
+            send_command(tn, "exit")
+        
+        
+        send_command(tn, "end")
+        send_command(tn, "write memory", sleep_time=1)
+        
+        
+        output = tn.read_very_eager().decode('ascii')
+        print("--- Retour Console ---")
+       
+        print("\n".join(output.split("\n")[-10:])) 
+        
+        tn.close()
+        print(f"[✅] Déploiement terminé sur {host}:{port}\n")
+
+    except Exception as e:
+        print(f"[-] Erreur de connexion à {host}:{port} : {e}")
 
 def main():
     ap = argparse.ArgumentParser(
@@ -164,6 +223,33 @@ def main():
 
     print("\n✅ Done.")
     print("ℹ️ Pense à 'Reload' / 'Restart' les nodes dans GNS3 si nécessaire.")
+
+#partie VRF
+    print("[-] Chargement de intent_file.json...")
+    with open("intent_file.json", "r") as f:
+        network_data = json.load(f)
+    
+    
+    vrfs_to_deploy = network_data.get("vrfs", [])
+    
+    if not vrfs_to_deploy:
+        print("Aucune VRF trouvée dans le fichier JSON.")
+        exit()
+
+  
+    gns3_routers = {
+        "PE1": {"host": "127.0.0.1", "port": 5000},
+        "PE2": {"host": "127.0.0.1", "port": 5003}
+    }
+
+    
+    for router_name, connection_info in gns3_routers.items():
+        print(f"=== Cible : {router_name} ===")
+        deploy_vrf_via_telnet(
+            connection_info["host"], 
+            connection_info["port"], 
+            vrfs_to_deploy
+        )
 
 
 if __name__ == "__main__":
