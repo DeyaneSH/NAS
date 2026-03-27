@@ -113,22 +113,50 @@ ip cef
     cfg += "!\n"
     return cfg
 
+#NOUVEAU : Configuration globale des VRF uniquement sur les routeurs PE
+def configurer_vrfs_global(intent, router_name):
+    """Génère la définition globale des VRF uniquement pour les routeurs PE."""
+    as_data = get_router_as(router_name, intent)
+    if not as_data: 
+        return ""
+    
+    role = next((r.get("role") for r in as_data.get("routers", []) if r["name"] == router_name), None)
+    if role != "PE":
+        return "" # On ne configure pas de VRF sur les P ou les CE
+        
+    cfg = ""
+    vrfs = intent.get("vrfs", [])
+    for vrf in vrfs:
+        cfg += f"ip vrf {vrf['name']}\n"
+        cfg += f" rd {vrf['rd']}\n"
+        for rt in vrf.get("rt_export", []):
+            cfg += f" route-target export {rt}\n"
+        for rt in vrf.get("rt_import", []):
+            cfg += f" route-target import {rt}\n"
+        cfg += "!\n"
+        
+    return cfg
+
 def configurer_interfaces(interfaces, protocol_igp: str):
     cfg = ""
     for iface in interfaces:
-        cfg += f"""interface {iface['name']}
- ip address {iface['ip']} {iface['mask']}
-"""
+        cfg += f"interface {iface['name']}\n"
+        
+        # NOUVEAU : Placer la VRF AVANT l'adresse IP
+        if "vrf" in iface:
+            cfg += f" ip vrf forwarding {iface['vrf']}\n"
+            
+        cfg += f" ip address {iface['ip']} {iface['mask']}\n"
 
-        # coût OSPF uniquement si le routeur est en OSPF
+        # NOUVEAU : Coût OSPF ignoré si l'interface est dans une VRF
         metric = iface.get("ospf_metric")
-        if protocol_igp.upper() == "OSPF" and metric is not None:
+        if protocol_igp.upper() == "OSPF" and metric is not None and "vrf" not in iface:
             cfg += f" ip ospf cost {int(metric)}\n"
+            
         if iface.get("mpls"):
-            cfg +=" mpls ip\n" # On active MPLS
+            cfg +=" mpls ip\n"
 
-        cfg += "no shutdown\n"
-        cfg += "!\n"
+        cfg += " no shutdown\n!\n"
 
     return cfg
 
@@ -171,6 +199,10 @@ def configurer_igp(as_data, interfaces, loopback_ip):
  router-id {loopback_ip}
 """
         for iface in interfaces:
+            # NOUVEAU : Ne SURTOUT PAS annoncer les liens clients dans l'OSPF du cœur !
+            if "vrf" in iface:
+                continue 
+                
             mask = iface["mask"]
             prefixlen = ipaddress.IPv4Network(f"0.0.0.0/{mask}").prefixlen
             net = ipaddress.IPv4Interface(f"{iface['ip']}/{prefixlen}").network
@@ -338,11 +370,18 @@ def get_router_loopback(router_name, intent):
     return None
 
 def get_router_interfaces(router_name, intent):
+    # NOUVEAU : Trouver le rôle du routeur
+    router_role = None
+    for as_data in intent.get("autonomous_systems", []):
+        for r in as_data.get("routers", []):
+            if r["name"] == router_name:
+                router_role = r.get("role")
+
     interfaces = []
     for link in intent.get("links", []):
-        # lecture de la métrique portée par le lien (choisis UNE clé et garde-la)
-        metric = link.get("ospf_metric")  # <- on va utiliser cette clé dans TON json
-        mpls_enabled = link.get("mpls",False) # Pour récup le flag mpls du JSON
+        metric = link.get("ospf_metric")
+        mpls_enabled = link.get("mpls", False)
+        vrf_name = link.get("vrf")  # NOUVEAU : Lire le nom de la VRF sur le lien
 
         for ep in link.get("endpoints", []):
             if ep.get("device") == router_name:
@@ -356,6 +395,11 @@ def get_router_interfaces(router_name, intent):
                     iface_data["ospf_metric"] = metric
                 if mpls_enabled:
                     iface_data["mpls"] = True
+                
+                # NOUVEAU : Appliquer la VRF seulement si on est sur un routeur PE
+                if vrf_name and router_role == "PE":
+                    iface_data["vrf"] = vrf_name
+
                 interfaces.append(iface_data)
     return interfaces
 
@@ -439,6 +483,7 @@ def assembler_configuration(router_name, intent):
 
     cfg = ""
     cfg += creer_entete(router_name, mpls_enabled=router_needs_mpls)
+    cfg += configurer_vrfs_global(intent, router_name)
     cfg += configurer_loopback(loopback_ip)
     
     protocol_igp = as_data["igp"]["protocol"].upper()
