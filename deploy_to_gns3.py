@@ -161,6 +161,8 @@ def deploy_vrf_via_telnet(host, port, vrf_list):
     except Exception as e:
         print(f"[-] Erreur de connexion à {host}:{port} : {e}")
 
+
+
 def main():
     ap = argparse.ArgumentParser(
         description="Déploie les configs générées (output/*.cfg) dans le bon dossier du projet GNS3."
@@ -188,11 +190,23 @@ def main():
     missing_startup: List[str] = []
     deployed: List[Tuple[str, str]] = []
 
+    # Infos de connexion aux nodes GNS3 pour Telnet
+    gns3_routers = {}
+
     for n in nodes:
         name = n.get("name")
         node_id = n.get("node_id")
         if not name or not node_id:
             continue
+
+        print("Cherche le port telnet")
+        # Cherche le port telnet
+        if "PE" in name:
+            print("PE found: " + name)
+            telnet_port = n.get("console")
+            print("telnet_port = " + str(telnet_port))
+
+            gns3_routers[name] = {"host": "127.0.0.1", "port": telnet_port}
 
         # On déploie seulement si un fichier <name>.cfg existe
         src_cfg = os.path.join(gen_dir, f"{name}{args.ext}")
@@ -209,6 +223,7 @@ def main():
         if dst_cfg is None:
             missing_startup.append(name)
             continue
+
 
         deploy_one(name, src_cfg, dst_cfg, do_backup=args.backup, dry_run=args.dry_run)
         deployed.append((name, dst_cfg))
@@ -236,13 +251,6 @@ def main():
     if not vrfs_to_deploy:
         print("Aucune VRF trouvée dans le fichier JSON.")
         exit()
-
-  
-    gns3_routers = {
-        "PE1": {"host": "127.0.0.1", "port": 5000},
-        "PE2": {"host": "127.0.0.1", "port": 5003}
-    }
-
     
     for router_name, connection_info in gns3_routers.items():
         print(f"=== Cible : {router_name} ===")
@@ -263,11 +271,6 @@ def main():
     if not vrfs_to_deploy:
         print("Aucune VRF trouvée.")
         return
-
-    gns3_routers = {
-        "PE1": {"host": "127.0.0.1", "port": 5000},
-        "PE2": {"host": "127.0.0.1", "port": 5003}
-    }
 
     for router_name, connection_info in gns3_routers.items():
         deploy_vrf_via_telnet(connection_info["host"], connection_info["port"], vrfs_to_deploy)
