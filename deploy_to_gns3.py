@@ -20,7 +20,7 @@ def find_gns3_file(project_dir: str) -> str:
             f"Aucun fichier .gns3 trouvé dans: {project_dir}\n"
             "➡️ Donne le chemin du dossier projet GNS3 (celui qui contient le .gns3)."
         )
-    # Si plusieurs, on prend le premier (souvent il n'y en a qu'un)
+  
     return sorted(candidates)[0]
 
 
@@ -72,7 +72,7 @@ def find_startup_config(node_dir: str) -> Optional[str]:
     if not hits:
         return None
 
-    # Heuristique: on préfère un chemin contenant "/configs/"
+    
     hits.sort(key=lambda p: ("/configs/" not in p.replace("\\", "/"), len(p)))
     return hits[0]
 
@@ -89,7 +89,7 @@ def deploy_one(router_name: str, src_cfg: str, dst_cfg: str, do_backup: bool, dr
         raise FileNotFoundError(f"Config générée introuvable: {src_cfg}")
 
     if not os.path.exists(dst_cfg):
-        # si le fichier n'existe pas, on crée les dossiers parent si besoin
+     
         os.makedirs(os.path.dirname(dst_cfg), exist_ok=True)
 
     if dry_run:
@@ -108,15 +108,14 @@ def send_command(tn, command, sleep_time=0.5):
     Envoie une commande avec le vrai 'Entrée' Cisco (\r\n) 
     et affiche TOUT ce que le routeur répond pour débugger.
     """
-    # 1. CORRECTION MAJEURE : On utilise \r\n au lieu de \n
+    
     tn.write(command.encode('ascii') + b"\r\n")
     time.sleep(sleep_time)
     
-    # 2. On lit la réponse
+    
     output = tn.read_very_eager().decode('ascii', errors='ignore')
     
-    # 3. DEBUG : On affiche la réponse brute du routeur dans la console Python !
-    # On nettoie un peu l'affichage pour que ce soit lisible
+    
     reponse_propre = output.replace('\r\n', ' | ').strip()
     if reponse_propre:
         print(f"      [Routeur] {reponse_propre}")
@@ -133,16 +132,16 @@ def deploy_vrf_via_telnet(host, port, vrf_list):
     try:
         tn = telnetlib.Telnet(host, port, timeout=5)
         
-        # On appuie deux fois sur Entrée pour rafraîchir le prompt
+       
         tn.write(b"\r\n\r\n")
-        time.sleep(1) # On attend 1 vraie seconde que le routeur se réveille
-        tn.read_very_eager() # On vide les vieux logs systèmes qui traînent
+        time.sleep(1) 
+        tn.read_very_eager() 
 
         print("[+] Connecté ! Passage en mode configuration...")
-        # On s'assure d'abord d'être en mode enable (si jamais le routeur était en Router>)
+       
         send_command(tn, "enable", sleep_time=0.5)
         
-        # On passe en mode config et on attend pour être SÛR d'y être
+       
         send_command(tn, "configure terminal", sleep_time=1)
 
         for vrf in vrf_list:
@@ -151,19 +150,19 @@ def deploy_vrf_via_telnet(host, port, vrf_list):
             send_command(tn, f"ip vrf {vrf['name']}")
             send_command(tn, f"rd {vrf['rd']}")
             
-            for rt_exp in vrf.get('rt_export', []): # .get() protège si la clé manque
+            for rt_exp in vrf.get('rt_export', []): 
                 send_command(tn, f"route-target export {rt_exp}")
                 
             for rt_imp in vrf.get('rt_import', []):
                 send_command(tn, f"route-target import {rt_imp}")
             
-            send_command(tn, "exit") # On sort de la config de cette VRF
+            send_command(tn, "exit") 
         
         send_command(tn, "end")
         print("[+] Sauvegarde de la configuration (write memory)...")
-        # On envoie la commande
+        
         send_command(tn, "write memory", sleep_time=2)
-        # On envoie une touche "Entrée" supplémentaire (b"\r\n") pour valider le [confirm]
+        
         tn.write(b"\r\n") 
         time.sleep(1)
         
@@ -174,12 +173,12 @@ def deploy_vrf_via_telnet(host, port, vrf_list):
         print(f"[-] Erreur de connexion à {host}:{port} : {e}")
 
 def main():
-    # 1. On crée d'ABORD le parseur
+    
     ap = argparse.ArgumentParser(
         description="Déploie les configs générées (output/*.cfg) dans le bon dossier du projet GNS3."
     )
     
-    # 2. On ajoute TOUS les arguments
+    
     ap.add_argument("--telnet-vrf", action="store_true", help="Déploie uniquement les VRFs à chaud via Telnet")
     ap.add_argument("--project", required=True, help="Chemin du dossier projet GNS3 (celui qui contient le .gns3)")
     ap.add_argument("--generated", default="output", help="Dossier contenant R1.cfg, R2.cfg, ... (par défaut: output)")
@@ -187,18 +186,16 @@ def main():
     ap.add_argument("--backup", action="store_true", help="Fait un backup du startup-config actuel avant d'écraser")
     ap.add_argument("--dry-run", action="store_true", help="N'écrit rien, affiche juste ce qui serait copié")
     
-    # 3. On parse (lit) les arguments tapés par l'utilisateur
+    
     args = ap.parse_args()
 
-    # --- AIGUILLAGE PRINCIPAL ---
+    
     
     if args.telnet_vrf:
-        # ==========================================
-        # EXECUTION À CHAUD (PHASE 3 & 4) - TELNET
-        # ==========================================
+        
         print("[-] Mode Telnet activé : Déploiement des VRFs à chaud...")
         
-        # On lit le fichier JSON pour trouver les VRF
+        
         try:
             with open("intent_file.json", "r") as f:
                 network_data = json.load(f)
@@ -211,13 +208,13 @@ def main():
             print("⚠️ Aucune VRF (vrfs) trouvée dans le fichier JSON.")
             return
 
-        # Dictionnaire statique (pourrait être dynamique plus tard)
+        
         gns3_routers = {
             "PE1": {"host": "127.0.0.1", "port": 5004},
             "PE2": {"host": "127.0.0.1", "port": 5000}
         }
 
-        # On lance le déploiement Telnet
+        
         for router_name, connection_info in gns3_routers.items():
             print(f"\n=== Cible : {router_name} ===")
             deploy_vrf_via_telnet(
@@ -227,9 +224,7 @@ def main():
             )
 
     else:
-        # ==========================================
-        # EXECUTION À FROID (PHASE 1 & 2) - FICHIERS
-        # ==========================================
+        
         print("[-] Mode Fichiers activé : Écrasement des startup-configs...")
         
         project_dir = os.path.abspath(args.project)
