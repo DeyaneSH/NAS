@@ -212,20 +212,20 @@ def main():
         gns3_routers = {}
 
         for n in nodes:
-        name = n.get("name")
-        node_id = n.get("node_id")
-        if not name or not node_id:
-            continue
+            name = n.get("name")
+            node_id = n.get("node_id")
+            if not name or not node_id:
+                continue
 
-        print("Cherche le port telnet")
+            print("Cherche le port telnet")
 
-        # Cherche le port telnet dans le .gns3
-        if "PE" in name:
-            print("PE found: " + name)
-            telnet_port = n.get("console")
-            print("telnet_port = " + str(telnet_port))
+            # Cherche le port telnet dans le .gns3
+            if "PE" in name:
+                print("PE found: " + name)
+                telnet_port = n.get("console")
+                print("telnet_port = " + str(telnet_port))
 
-            gns3_routers[name] = {"host": "127.0.0.1", "port": telnet_port}
+                gns3_routers[name] = {"host": "127.0.0.1", "port": telnet_port}
 
         
         for router_name, connection_info in gns3_routers.items():
