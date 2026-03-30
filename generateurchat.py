@@ -228,6 +228,11 @@ def configurer_bgp(as_data, asn, router_id, ibgp_neighbors, ebgp_neighbors, inte
     cfg += f" bgp router-id {router_id}\n"
     cfg += " bgp log-neighbor-changes\n"
 
+    # Sans appliquer de route-map d'export + annoncer sa loopback pour iBGP, sinon les RRs ne se voient pas entre eux ni avec les PEs clients
+    cfg += f" address-family ipv4\n"
+    cfg += f"  network {router_id} mask 255.255.255.255\n"
+    cfg += f" exit-address-family\n"
+
     for n_info in ibgp_neighbors:
         n = n_info["ip"]
         cfg += f" neighbor {n} remote-as {asn}\n"
@@ -260,12 +265,9 @@ def configurer_bgp(as_data, asn, router_id, ibgp_neighbors, ebgp_neighbors, inte
             cfg += f"  neighbor {peer_ip} activate\n"
             cfg += f" exit-address-family\n"
         else:
+            # Sans appliquer de route-map d'export contraignant !
             cfg += f" neighbor {peer_ip} remote-as {n['remote_as']}\n"
-            cfg += f" neighbor {peer_ip} send-community\n"
-            cfg += f" neighbor {peer_ip} route-map RM-IN-{role.upper()} in\n"
-            cfg += f" neighbor {peer_ip} route-map RM-OUT-TO-{role.upper()} out\n"
             cfg += f" neighbor {peer_ip} soft-reconfiguration inbound\n"
-            cfg += f" neighbor {peer_ip} next-hop-self\n"
 
     return cfg + "!\n"
 
