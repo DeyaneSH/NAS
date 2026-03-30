@@ -1,17 +1,16 @@
-🚀 NAS Project - GNS3 Network Automation
+# 🚀 NAS Project - GNS3 Network Automation
 
 Ce projet permet d'automatiser de bout en bout la configuration d'un réseau opérateur (OSPF, MPLS LDP, BGP VPNv4) et d'y raccorder des clients isolés via des VRF (L3VPN). Il déploie directement les configurations générées dans un projet GNS3 local, avec un support pour l'injection à chaud via Telnet.
-📋 Prérequis
 
-    Python 3.x installé sur votre machine.
+## 📋 Prérequis
 
-    GNS3 installé et fonctionnel.
+- **Python 3.x** installé sur votre machine.
+- **GNS3** installé et fonctionnel.
+- Un projet GNS3 créé avec une topologie correspondant aux routeurs définis dans le fichier d'intention (ex: `PE1`, `P1`, `P2`, `PE2`, `CE1`, `CE2`...).
 
-    Un projet GNS3 créé avec une topologie correspondant aux routeurs définis dans le fichier d'intention (ex: PE1, P1, P2, PE2, CE1, CE2...).
+## 📁 Structure du projet
 
-📁 Structure du projet
-Plaintext
-
+```text
 ├── intent_file.json      # Le fichier d'intention (votre architecture réseau cible, VRF, BGP)
 ├── generateurchat.py     # Le moteur de génération des configurations Cisco IOS
 ├── main.py               # Script principal : lit le JSON et génère les fichiers .cfg
@@ -46,6 +45,8 @@ Lancez le script en remplaçant <CHEMIN_PROJET> par le chemin vers votre projet 
 Bash
 
 python3 deploy_to_gns3.py --project "Chemin/Vers/Votre/Projet" --backup
+
+Note : Utilisez des guillemets si votre chemin contient des espaces.
 
     Retournez dans l'interface de GNS3.
 
