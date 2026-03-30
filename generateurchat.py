@@ -170,7 +170,7 @@ def configurer_igp(as_data, interfaces, loopback_ip):
 
     return ""
 
-# BGP POLICIES (PARTIE 3.4)
+# BGP POLICIES 
 
 def configurer_bgp_policies(intent):
     """Politique valley-free via COMMUNITIES."""
@@ -203,9 +203,8 @@ def configurer_bgp_policies(intent):
 
     return cfg
 
-# =========================================================
 # CONFIGURER BGP
-# =========================================================
+
 
 def configurer_bgp(as_data, asn, router_id, ibgp_neighbors, ebgp_neighbors, intent):
     if not ibgp_neighbors and not ebgp_neighbors:
@@ -264,7 +263,7 @@ def configurer_bgp(as_data, asn, router_id, ibgp_neighbors, ebgp_neighbors, inte
 
     return cfg + "!\n"
 
-# LOGIQUE INTENT
+#INTENT
 
 def get_router_as(router_name, intent):
     for as_data in intent.get("autonomous_systems", []):
