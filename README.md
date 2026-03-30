@@ -10,13 +10,13 @@ Ce projet permet d'automatiser de bout en bout la configuration d'un réseau op�
 
 ## 📁 Structure du projet
 
-\`\`\`text
+```text
 ├── intent_file.json      # Le fichier d'intention (votre architecture réseau cible, VRF, BGP)
 ├── generateurchat.py     # Le moteur de génération des configurations Cisco IOS
 ├── main.py               # Script principal : lit le JSON et génère les fichiers .cfg
 ├── deploy_to_gns3.py     # Script de déploiement : injecte les .cfg et/ou configure via Telnet
 └── output/               # Dossier généré contenant les configurations (.cfg) prêtes
-\`\`\`
+```
 
 ## 🛠️ Guide d'utilisation
 
