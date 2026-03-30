@@ -124,7 +124,7 @@ def main() -> int:
         return 0
 
     except Exception as e:
-        # En mode "projet", mieux vaut une erreur claire et un exit code non nul
+     
         print("❌ ERREUR:", str(e))
         return 1
 
