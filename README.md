@@ -29,9 +29,9 @@ Ce projet permet d'automatiser de bout en bout la configuration d'un réseau op�
 ### Étape 2 : Générer les configurations
 Dans votre terminal, à la racine du dépôt, lancez le générateur :
 
-\`\`\`bash
+```bash
 python3 main.py
-\`\`\`
+```
 
 > **Résultat :** Le script lit `intent_file.json` et crée un fichier `.cfg` par routeur dans le dossier `output/`.
 
@@ -39,9 +39,9 @@ python3 main.py
 Cette étape injecte les fichiers `.cfg` générés directement dans les dossiers de votre projet GNS3 (pour écraser les `startup-config`).
 
 Lancez le script en remplaçant `<CHEMIN_PROJET>` par le chemin vers votre projet GNS3 :
-\`\`\`bash
+```bash
 python3 deploy_to_gns3.py --project "Chemin/Vers/Votre/Projet" --backup
-\`\`\`
+```
 *Note : Utilisez des guillemets si votre chemin contient des espaces.*
 
 1. Retournez dans l'interface de GNS3.
@@ -51,8 +51,8 @@ python3 deploy_to_gns3.py --project "Chemin/Vers/Votre/Projet" --backup
 ### Étape 4 : Déploiement à chaud des VRF (Telnet)
 Une fois les routeurs démarrés et stabilisés, utilisez le mode Telnet de notre script pour créer et configurer les VRF (Route Distinguisher, Route Targets) en direct sur les routeurs PE.
 
-\`\`\`bash
+```bash
 python3 deploy_to_gns3.py --project "Chemin/Vers/Votre/Projet" --telnet-vrf
-\`\`\`
+```
 
 *Projet réalisé dans le cadre du cours NAS (Network Automation and Services).*
