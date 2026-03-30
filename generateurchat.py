@@ -74,9 +74,7 @@ def validate_intent_minimal(intent: dict):
         if find_link_peer_ip(lr, rr, intent) is None:
             raise ValueError(f"Topo incomplète: ebgp_peers {lr}->{rr} mais aucun lien dans 'links'.")
 
-# =========================================================
 # BLOCS DE CONFIGURATION DE BASE
-# =========================================================
 
 def creer_entete(hostname, mpls_enabled=False):
     cfg = f"""!
@@ -141,11 +139,7 @@ def configurer_loopback(loopback_ip):
  ip address {loopback_ip} 255.255.255.255
 !
 """
-
-# =========================================================
 # IGP
-# =========================================================
-
 def configurer_igp(as_data, interfaces, loopback_ip):
     igp = as_data["igp"]["protocol"].upper()
 
@@ -176,9 +170,7 @@ def configurer_igp(as_data, interfaces, loopback_ip):
 
     return ""
 
-# =========================================================
 # BGP POLICIES (PARTIE 3.4)
-# =========================================================
 
 def configurer_bgp_policies(intent):
     """Politique valley-free via COMMUNITIES."""
@@ -228,7 +220,7 @@ def configurer_bgp(as_data, asn, router_id, ibgp_neighbors, ebgp_neighbors, inte
     cfg += f" bgp router-id {router_id}\n"
     cfg += " bgp log-neighbor-changes\n"
 
-    # Sans appliquer de route-map d'export + annoncer sa loopback pour iBGP, sinon les RRs ne se voient pas entre eux ni avec les PEs clients
+   
     cfg += f" address-family ipv4\n"
     cfg += f"  network {router_id} mask 255.255.255.255\n"
     cfg += f" exit-address-family\n"
@@ -265,16 +257,14 @@ def configurer_bgp(as_data, asn, router_id, ibgp_neighbors, ebgp_neighbors, inte
             cfg += f"  neighbor {peer_ip} activate\n"
             cfg += f" exit-address-family\n"
         else:
-            # Sans appliquer de route-map d'export contraignant !
+            
             cfg += f" neighbor {peer_ip} remote-as {n['remote_as']}\n"
             cfg += f" neighbor {peer_ip} soft-reconfiguration inbound\n"
-            cfg += f" neighbor {peer_ip} allowas-in\n" #avoir le même AS en exception
+            cfg += f" neighbor {peer_ip} allowas-in\n" 
 
     return cfg + "!\n"
 
-# =========================================================
 # LOGIQUE INTENT
-# =========================================================
 
 def get_router_as(router_name, intent):
     for as_data in intent.get("autonomous_systems", []):
@@ -357,9 +347,7 @@ def collect_ebgp_neighbors(router_name: str, intent: dict):
 
     return neighbors
 
-# =========================================================
-# ASSEMBLER CONFIGURATION COMPLETE
-# =========================================================
+#ASSEMBLER CONFIGURATION COMPLETE
 
 def assembler_configuration(router_name, intent):
     try:
@@ -380,7 +368,7 @@ def assembler_configuration(router_name, intent):
     
     current_router_role = next((r.get("role") for r in as_data.get("routers", []) if r["name"] == router_name), None)
 
-    # iBGP : Full-mesh entre tous les PEs, ou PE <-> RR
+ 
     ibgp_neighbors = []
     if current_router_role == "PE":
         for r in as_data.get("routers", []):
