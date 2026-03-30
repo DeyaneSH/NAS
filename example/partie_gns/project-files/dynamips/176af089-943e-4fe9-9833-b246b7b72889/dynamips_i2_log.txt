@@ -1,0 +1,166 @@
+Mar 27 09:22:29.956 HYPERVISOR: Release 0.2.17-x86/Windows (tag 2017072410)
+Mar 27 09:22:29.956 HYPERVISOR: Started on IP = localhost, TCP port = 60538.
+Mar 27 09:22:30.459 HYPERVISOR: exec_cmd: hypervisor version 
+Mar 27 09:22:30.461 HYPERVISOR: exec_cmd: hypervisor working_dir C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips 
+Mar 27 09:22:30.461 GENERAL: working_dir=C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips
+Mar 27 09:22:30.461 HYPERVISOR: exec_cmd: hypervisor working_dir C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\176af089-943e-4fe9-9833-b246b7b72889 
+Mar 27 09:22:30.462 GENERAL: working_dir=C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\176af089-943e-4fe9-9833-b246b7b72889
+Mar 27 09:22:30.463 HYPERVISOR: exec_cmd: vm create P1 2 c7200 
+Mar 27 09:22:30.465 VM: VM P1 created.
+Mar 27 09:22:30.466 HYPERVISOR: exec_cmd: vm set_con_tcp_port P1 5005 
+Mar 27 09:22:30.467 HYPERVISOR: exec_cmd: c7200 get_mac_addr P1 
+Mar 27 09:22:30.467 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 09:22:30.468 HYPERVISOR: exec_cmd: vm slot_add_binding P1 0 0 C7200-IO-FE 
+Mar 27 09:22:30.469 HYPERVISOR: exec_cmd: vm set_disk0 P1 0 
+Mar 27 09:22:30.470 HYPERVISOR: exec_cmd: vm set_exec_area P1 64 
+Mar 27 09:22:30.473 HYPERVISOR: exec_cmd: vm set_ios P1 C:/Users/Lucas/GNS3/images/IOS/c7200-advipservicesk9-mz.152-4.S5.image 
+Mar 27 09:22:30.474 HYPERVISOR: exec_cmd: c7200 set_mac_addr P1 ca02.cff8.0000 
+Mar 27 09:22:30.475 HYPERVISOR: exec_cmd: vm set_nvram P1 512 
+Mar 27 09:22:30.476 HYPERVISOR: exec_cmd: vm set_ram P1 512 
+Mar 27 09:22:30.477 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 09:22:30.477 HYPERVISOR: exec_cmd: vm slot_remove_binding P1 0 0 
+Mar 27 09:22:30.478 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 09:22:30.478 HYPERVISOR: exec_cmd: vm slot_add_binding P1 0 0 C7200-IO-GE-E 
+Mar 27 09:22:30.479 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 09:22:30.479 HYPERVISOR: exec_cmd: vm slot_add_binding P1 1 0 PA-2FE-TX 
+Mar 27 09:22:30.479 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 09:22:30.479 HYPERVISOR: exec_cmd: vm slot_add_binding P1 2 0 PA-2FE-TX 
+Mar 27 09:22:30.480 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 09:22:30.480 HYPERVISOR: exec_cmd: vm slot_add_binding P1 3 0 PA-2FE-TX 
+Mar 27 09:22:30.480 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 09:22:30.481 HYPERVISOR: exec_cmd: vm slot_add_binding P1 4 0 PA-2FE-TX 
+Mar 27 09:22:34.315 HYPERVISOR: exec_cmd: nio create_udp udp-fb78832d-1876-44b2-bb78-4901f105a260 10004 127.0.0.1 10005 
+Mar 27 09:22:34.584 HYPERVISOR: exec_cmd: vm slot_add_nio_binding P1 0 0 udp-fb78832d-1876-44b2-bb78-4901f105a260 
+Mar 27 09:22:34.584 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 09:22:34.622 HYPERVISOR: exec_cmd: nio create_udp udp-0f68cda3-d7f2-4cc2-b138-43d3f6532f1c 10008 127.0.0.1 10009 
+Mar 27 09:22:34.626 HYPERVISOR: exec_cmd: vm slot_add_nio_binding P1 1 0 udp-0f68cda3-d7f2-4cc2-b138-43d3f6532f1c 
+Mar 27 09:22:34.627 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 09:40:26.784 HYPERVISOR: exec_cmd: vm create Ghost 0 c7200 
+Mar 27 09:40:26.786 VM: VM Ghost created.
+Mar 27 09:40:26.787 HYPERVISOR: exec_cmd: vm set_ios Ghost C:/Users/Lucas/GNS3/images/IOS/c7200-advipservicesk9-mz.152-4.S5.image 
+Mar 27 09:40:26.788 HYPERVISOR: exec_cmd: vm set_ghost_status Ghost 1 
+Mar 27 09:40:26.790 HYPERVISOR: exec_cmd: vm set_ghost_file Ghost C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\c7200-advipservicesk9-mz.152-4.S5.image-512.ghost 
+Mar 27 09:40:26.791 HYPERVISOR: exec_cmd: vm set_ram Ghost 512 
+Mar 27 09:40:26.792 HYPERVISOR: exec_cmd: vm get_status Ghost 
+Mar 27 09:40:26.793 HYPERVISOR: exec_cmd: vm set_config Ghost configs\i0_startup-config.cfg 
+Mar 27 09:40:26.793 HYPERVISOR: exec_cmd: vm start Ghost 
+Mar 27 09:40:27.181 HYPERVISOR: exec_cmd: vm get_status Ghost 
+Mar 27 09:40:27.183 HYPERVISOR: exec_cmd: vm stop Ghost 
+Mar 27 09:40:27.251 VM: VM Ghost shutdown.
+Mar 27 09:40:27.252 HYPERVISOR: exec_cmd: vm extract_config Ghost 
+Mar 27 09:40:27.255 HYPERVISOR: exec_cmd: vm clean_delete Ghost 
+Mar 27 09:40:27.255 VM: VM Ghost destroyed.
+Mar 27 09:40:27.259 HYPERVISOR: exec_cmd: vm set_ghost_status P1 2 
+Mar 27 09:40:27.260 HYPERVISOR: exec_cmd: vm set_ghost_file P1 C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\c7200-advipservicesk9-mz.152-4.S5.image-512.ghost 
+Mar 27 09:40:27.261 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 09:40:27.263 HYPERVISOR: exec_cmd: vm set_config P1 configs\i2_startup-config.cfg 
+Mar 27 09:40:27.263 HYPERVISOR: exec_cmd: vm start P1 
+Mar 27 09:40:57.590 HYPERVISOR: exec_cmd: vm extract_config P1 
+Mar 27 09:46:09.859 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 09:46:09.860 HYPERVISOR: exec_cmd: vm stop P1 
+Mar 27 09:46:09.959 VM: VM P1 shutdown.
+Mar 27 09:46:09.961 HYPERVISOR: exec_cmd: vm extract_config P1 
+Mar 27 09:46:24.965 HYPERVISOR: exec_cmd: vm set_ghost_status P1 2 
+Mar 27 09:46:24.966 HYPERVISOR: exec_cmd: vm set_ghost_file P1 C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\c7200-advipservicesk9-mz.152-4.S5.image-512.ghost 
+Mar 27 09:46:24.967 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 09:46:24.969 HYPERVISOR: exec_cmd: vm set_config P1 configs\i2_startup-config.cfg 
+Mar 27 09:46:24.970 HYPERVISOR: exec_cmd: vm start P1 
+Mar 27 10:12:41.063 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:12:41.064 HYPERVISOR: exec_cmd: vm stop P1 
+Mar 27 10:12:41.162 VM: VM P1 shutdown.
+Mar 27 10:12:41.163 HYPERVISOR: exec_cmd: vm extract_config P1 
+Mar 27 10:13:36.814 HYPERVISOR: exec_cmd: vm set_ghost_status P1 2 
+Mar 27 10:13:36.815 HYPERVISOR: exec_cmd: vm set_ghost_file P1 C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\c7200-advipservicesk9-mz.152-4.S5.image-512.ghost 
+Mar 27 10:13:36.816 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:13:36.817 HYPERVISOR: exec_cmd: vm set_config P1 configs\i2_startup-config.cfg 
+Mar 27 10:13:36.817 HYPERVISOR: exec_cmd: vm start P1 
+Mar 27 10:20:35.131 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:20:35.132 HYPERVISOR: exec_cmd: vm stop P1 
+Mar 27 10:20:35.215 VM: VM P1 shutdown.
+Mar 27 10:20:35.217 HYPERVISOR: exec_cmd: vm extract_config P1 
+Mar 27 10:20:53.857 HYPERVISOR: exec_cmd: vm set_ghost_status P1 2 
+Mar 27 10:20:53.858 HYPERVISOR: exec_cmd: vm set_ghost_file P1 C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\c7200-advipservicesk9-mz.152-4.S5.image-512.ghost 
+Mar 27 10:20:53.859 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:20:53.860 HYPERVISOR: exec_cmd: vm set_config P1 configs\i2_startup-config.cfg 
+Mar 27 10:20:53.860 HYPERVISOR: exec_cmd: vm start P1 
+Mar 27 10:21:47.511 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:21:47.511 HYPERVISOR: exec_cmd: vm stop P1 
+Mar 27 10:21:47.651 VM: VM P1 shutdown.
+Mar 27 10:21:47.652 HYPERVISOR: exec_cmd: vm extract_config P1 
+Mar 27 10:22:17.108 HYPERVISOR: exec_cmd: vm set_ghost_status P1 2 
+Mar 27 10:22:17.110 HYPERVISOR: exec_cmd: vm set_ghost_file P1 C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\c7200-advipservicesk9-mz.152-4.S5.image-512.ghost 
+Mar 27 10:22:17.110 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:22:17.112 HYPERVISOR: exec_cmd: vm set_config P1 configs\i2_startup-config.cfg 
+Mar 27 10:22:17.112 HYPERVISOR: exec_cmd: vm start P1 
+Mar 27 10:28:07.921 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:28:07.922 HYPERVISOR: exec_cmd: vm stop P1 
+Mar 27 10:28:08.053 VM: VM P1 shutdown.
+Mar 27 10:28:08.054 HYPERVISOR: exec_cmd: vm extract_config P1 
+Mar 27 10:28:08.303 HYPERVISOR: exec_cmd: vm set_ghost_status P1 2 
+Mar 27 10:28:08.304 HYPERVISOR: exec_cmd: vm set_ghost_file P1 C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\c7200-advipservicesk9-mz.152-4.S5.image-512.ghost 
+Mar 27 10:28:08.304 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:28:08.305 HYPERVISOR: exec_cmd: vm set_config P1 configs\i2_startup-config.cfg 
+Mar 27 10:28:08.305 HYPERVISOR: exec_cmd: vm start P1 
+Mar 27 10:29:56.722 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:29:56.722 HYPERVISOR: exec_cmd: vm stop P1 
+Mar 27 10:29:56.835 VM: VM P1 shutdown.
+Mar 27 10:29:56.837 HYPERVISOR: exec_cmd: vm extract_config P1 
+Mar 27 10:30:10.474 HYPERVISOR: exec_cmd: vm set_ghost_status P1 2 
+Mar 27 10:30:10.475 HYPERVISOR: exec_cmd: vm set_ghost_file P1 C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\c7200-advipservicesk9-mz.152-4.S5.image-512.ghost 
+Mar 27 10:30:10.475 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:30:10.476 HYPERVISOR: exec_cmd: vm set_config P1 configs\i2_startup-config.cfg 
+Mar 27 10:30:10.477 HYPERVISOR: exec_cmd: vm start P1 
+Mar 27 10:32:58.950 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:32:58.951 HYPERVISOR: exec_cmd: vm stop P1 
+Mar 27 10:32:59.077 VM: VM P1 shutdown.
+Mar 27 10:32:59.078 HYPERVISOR: exec_cmd: vm extract_config P1 
+Mar 27 10:33:32.269 HYPERVISOR: exec_cmd: vm set_ghost_status P1 2 
+Mar 27 10:33:32.270 HYPERVISOR: exec_cmd: vm set_ghost_file P1 C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\c7200-advipservicesk9-mz.152-4.S5.image-512.ghost 
+Mar 27 10:33:32.271 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:33:32.271 HYPERVISOR: exec_cmd: vm set_config P1 configs\i2_startup-config.cfg 
+Mar 27 10:33:32.272 HYPERVISOR: exec_cmd: vm start P1 
+Mar 27 10:46:17.660 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:46:17.661 HYPERVISOR: exec_cmd: vm stop P1 
+Mar 27 10:46:17.771 VM: VM P1 shutdown.
+Mar 27 10:46:17.772 HYPERVISOR: exec_cmd: vm extract_config P1 
+Mar 27 10:46:28.856 HYPERVISOR: exec_cmd: vm set_ghost_status P1 2 
+Mar 27 10:46:28.858 HYPERVISOR: exec_cmd: vm set_ghost_file P1 C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\c7200-advipservicesk9-mz.152-4.S5.image-512.ghost 
+Mar 27 10:46:28.858 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:46:28.859 HYPERVISOR: exec_cmd: vm set_config P1 configs\i2_startup-config.cfg 
+Mar 27 10:46:28.860 HYPERVISOR: exec_cmd: vm start P1 
+Mar 27 10:51:20.722 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:51:20.722 HYPERVISOR: exec_cmd: vm stop P1 
+Mar 27 10:51:20.815 VM: VM P1 shutdown.
+Mar 27 10:51:20.817 HYPERVISOR: exec_cmd: vm extract_config P1 
+Mar 27 10:51:37.342 HYPERVISOR: exec_cmd: vm set_ghost_status P1 2 
+Mar 27 10:51:37.343 HYPERVISOR: exec_cmd: vm set_ghost_file P1 C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\c7200-advipservicesk9-mz.152-4.S5.image-512.ghost 
+Mar 27 10:51:37.343 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 10:51:37.344 HYPERVISOR: exec_cmd: vm set_config P1 configs\i2_startup-config.cfg 
+Mar 27 10:51:37.345 HYPERVISOR: exec_cmd: vm start P1 
+Mar 27 11:09:31.095 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 11:09:31.096 HYPERVISOR: exec_cmd: vm stop P1 
+Mar 27 11:09:31.209 VM: VM P1 shutdown.
+Mar 27 11:09:31.210 HYPERVISOR: exec_cmd: vm extract_config P1 
+Mar 27 11:09:31.413 HYPERVISOR: exec_cmd: vm set_ghost_status P1 2 
+Mar 27 11:09:31.414 HYPERVISOR: exec_cmd: vm set_ghost_file P1 C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\c7200-advipservicesk9-mz.152-4.S5.image-512.ghost 
+Mar 27 11:09:31.415 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 11:09:31.415 HYPERVISOR: exec_cmd: vm set_config P1 configs\i2_startup-config.cfg 
+Mar 27 11:09:31.416 HYPERVISOR: exec_cmd: vm start P1 
+Mar 27 11:09:34.921 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 11:09:34.921 HYPERVISOR: exec_cmd: vm stop P1 
+Mar 27 11:09:35.026 VM: VM P1 shutdown.
+Mar 27 11:09:35.028 HYPERVISOR: exec_cmd: vm extract_config P1 
+Mar 27 11:09:42.235 HYPERVISOR: exec_cmd: vm set_ghost_status P1 2 
+Mar 27 11:09:42.235 HYPERVISOR: exec_cmd: vm set_ghost_file P1 C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\c7200-advipservicesk9-mz.152-4.S5.image-512.ghost 
+Mar 27 11:09:42.236 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 11:09:42.237 HYPERVISOR: exec_cmd: vm set_config P1 configs\i2_startup-config.cfg 
+Mar 27 11:09:42.238 HYPERVISOR: exec_cmd: vm start P1 
+Mar 27 11:29:31.784 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 11:29:31.784 HYPERVISOR: exec_cmd: vm stop P1 
+Mar 27 11:29:31.933 VM: VM P1 shutdown.
+Mar 27 11:29:31.933 HYPERVISOR: exec_cmd: vm extract_config P1 
+Mar 27 11:29:40.108 HYPERVISOR: exec_cmd: vm set_ghost_status P1 2 
+Mar 27 11:29:40.108 HYPERVISOR: exec_cmd: vm set_ghost_file P1 C:\Users\Lucas\GNS3\projects\NAS\project-files\dynamips\c7200-advipservicesk9-mz.152-4.S5.image-512.ghost 
+Mar 27 11:29:40.108 HYPERVISOR: exec_cmd: vm get_status P1 
+Mar 27 11:29:40.114 HYPERVISOR: exec_cmd: vm set_config P1 configs\i2_startup-config.cfg 
+Mar 27 11:29:40.114 HYPERVISOR: exec_cmd: vm start P1 

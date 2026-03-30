@@ -1,0 +1,167 @@
+!
+
+!
+! Last configuration change at 10:23:21 UTC Fri Mar 27 2026
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+!
+hostname PE1
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+ip cef
+!
+ip vrf VRF_CE13
+ rd 100:130
+ route-target export 100:130
+ route-target import 100:130
+!
+ip vrf VRF_CE24
+ rd 100:240
+ route-target export 100:240
+ route-target import 100:240
+!
+!
+!
+!
+!
+!
+no ipv6 cef
+!
+!
+mpls label protocol ldp
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ ip address 10.255.255.3 255.255.255.255
+!
+interface Ethernet0/0
+ no ip address
+ shutdown
+ duplex auto
+!
+interface GigabitEthernet0/0
+ no ip address
+ ip ospf cost 10
+ shutdown
+ media-type gbic
+ speed 1000
+ duplex full
+ negotiation auto
+ mpls ip
+!
+interface FastEthernet1/0
+ ip address 10.0.0.2 255.255.255.252
+ speed auto
+ duplex auto
+!
+interface FastEthernet1/1
+ ip address 10.0.0.6 255.255.255.252
+ speed auto
+ duplex auto
+!
+interface FastEthernet2/0
+ no ip address
+ shutdown
+ speed auto
+ duplex auto
+!
+interface FastEthernet2/1
+ no ip address
+ shutdown
+ speed auto
+ duplex auto
+!
+interface FastEthernet3/0
+ no ip address
+ shutdown
+ speed auto
+ duplex auto
+!
+interface FastEthernet3/1
+ no ip address
+ shutdown
+ speed auto
+ duplex auto
+!
+interface FastEthernet4/0
+ no ip address
+ shutdown
+ speed auto
+ duplex auto
+!
+interface FastEthernet4/1
+ no ip address
+ shutdown
+ speed auto
+ duplex auto
+!
+router ospf 1
+ router-id 10.255.255.3
+ network 10.0.0.8 0.0.0.3 area 0
+ network 10.255.255.3 0.0.0.0 area 0
+!
+router bgp 100
+ bgp router-id 10.255.255.3
+ bgp log-neighbor-changes
+ neighbor 10.0.0.1 remote-as 130
+ neighbor 10.0.0.1 next-hop-self
+ neighbor 10.0.0.1 send-community
+ neighbor 10.0.0.1 soft-reconfiguration inbound
+ neighbor 10.0.0.1 route-map RM-IN-CUSTOMER in
+ neighbor 10.0.0.1 route-map RM-OUT-TO-CUSTOMER out
+ neighbor 10.0.0.5 remote-as 240
+ neighbor 10.0.0.5 next-hop-self
+ neighbor 10.0.0.5 send-community
+ neighbor 10.0.0.5 soft-reconfiguration inbound
+ neighbor 10.0.0.5 route-map RM-IN-CUSTOMER in
+ neighbor 10.0.0.5 route-map RM-OUT-TO-CUSTOMER out
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+!
+!
+mpls ldp router-id Loopback0 force
+!
+!
+control-plane
+!
+!
+line con 0
+ stopbits 1
+line aux 0
+ stopbits 1
+line vty 0 4
+ login
+!
+!
+end

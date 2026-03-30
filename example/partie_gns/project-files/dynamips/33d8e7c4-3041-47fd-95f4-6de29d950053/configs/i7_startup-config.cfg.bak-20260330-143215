@@ -1,0 +1,32 @@
+!
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+hostname CE3
+!
+ip cef
+!
+interface Loopback0
+ ip address 10.255.255.7 255.255.255.255
+!
+interface GigabitEthernet0/0
+ ip address 10.0.0.21 255.255.255.252
+ ip ospf cost 10
+ no shutdown
+!
+router ospf 1
+ router-id 10.255.255.7
+ network 10.0.0.20 0.0.0.3 area 0
+ network 10.255.255.7 0.0.0.0 area 0
+!
+router bgp 130
+ bgp router-id 10.255.255.7
+ bgp log-neighbor-changes
+ address-family ipv4
+  network 10.255.255.7 mask 255.255.255.255
+ exit-address-family
+ address-family ipv4
+  network 10.255.255.7 mask 255.255.255.255
+ exit-address-family
+!

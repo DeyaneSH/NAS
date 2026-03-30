@@ -1,0 +1,37 @@
+!
+!
+!
+!
+!
+!
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+hostname P2
+!
+ip cef
+mpls label protocol ldp
+mpls ldp router-id Loopback0 force
+!
+interface Loopback0
+ ip address 10.255.255.5 255.255.255.255
+!
+interface FastEthernet1/0
+ ip address 10.0.0.13 255.255.255.252
+ ip ospf cost 10
+ mpls ip
+ no shutdown
+!
+interface FastEthernet2/0
+ ip address 10.0.0.16 255.255.255.252
+ ip ospf cost 10
+ mpls ip
+ no shutdown
+!
+router ospf 1
+ router-id 10.255.255.5
+ network 10.0.0.12 0.0.0.3 area 0
+ network 10.0.0.16 0.0.0.3 area 0
+ network 10.255.255.5 0.0.0.0 area 0
+!

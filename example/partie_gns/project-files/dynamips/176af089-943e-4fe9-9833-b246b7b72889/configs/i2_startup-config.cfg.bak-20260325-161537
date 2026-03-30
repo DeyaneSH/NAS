@@ -1,0 +1,53 @@
+!
+!
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+hostname P1
+!
+ip cef
+mpls label protocol ldp
+mpls ldp router-id Loopback0 force
+!
+interface Loopback0
+ ip address 10.255.255.2 255.255.255.255
+!
+interface GigabitEthernet0/0
+ ip address 10.0.12.2 255.255.255.252
+ ip ospf cost 10
+ mpls ip
+no shutdown
+!
+interface FastEthernet1/0
+ ip address 10.0.23.1 255.255.255.252
+ ip ospf cost 10
+ mpls ip
+no shutdown
+!
+router ospf 1
+ router-id 10.255.255.2
+ network 10.0.12.0 0.0.0.3 area 0
+ network 10.0.23.0 0.0.0.3 area 0
+ network 10.255.255.2 0.0.0.0 area 0
+!
+router bgp 100
+ bgp router-id 10.255.255.2
+ bgp log-neighbor-changes
+ neighbor 10.255.255.1 remote-as 100
+ neighbor 10.255.255.1 update-source Loopback0
+ neighbor 10.255.255.4 remote-as 100
+ neighbor 10.255.255.4 update-source Loopback0
+ address-family ipv4
+  no neighbor 10.255.255.1 activate
+  no neighbor 10.255.255.4 activate
+ exit-address-family
+ address-family vpnv4
+  neighbor 10.255.255.1 activate
+  neighbor 10.255.255.1 send-community extended
+  neighbor 10.255.255.1 route-reflector-client
+  neighbor 10.255.255.4 activate
+  neighbor 10.255.255.4 send-community extended
+  neighbor 10.255.255.4 route-reflector-client
+ exit-address-family
+!
