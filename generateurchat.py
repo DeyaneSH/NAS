@@ -268,6 +268,7 @@ def configurer_bgp(as_data, asn, router_id, ibgp_neighbors, ebgp_neighbors, inte
             # Sans appliquer de route-map d'export contraignant !
             cfg += f" neighbor {peer_ip} remote-as {n['remote_as']}\n"
             cfg += f" neighbor {peer_ip} soft-reconfiguration inbound\n"
+            cfg += f" neighbor {peer_ip} allowas-in\n" #avoir le même AS en exception
 
     return cfg + "!\n"
 
