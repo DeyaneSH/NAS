@@ -208,7 +208,16 @@ def main():
             print("⚠️ Aucune VRF (vrfs) trouvée dans le fichier JSON.")
             return
 
-        
+        project_dir = os.path.abspath(args.project)
+        gen_dir = os.path.abspath(args.generated)
+
+        gns3_path = find_gns3_file(project_dir)
+        print(f"📄 Using project file: {gns3_path}")
+
+        nodes = load_project_nodes(gns3_path)
+        if not nodes:
+            raise RuntimeError("Aucun node trouvé dans le fichier .gns3 (topology.nodes vide).")
+
         gns3_routers = {}
 
         for n in nodes:
